@@ -1,0 +1,10 @@
+# Ignorer la base de données locale
+*.sql
+*.db
+
+# Ignorer fichiers temporaires de VS Code
+.vscode/
+
+# Ignorer fichiers système
+Thumbs.db
+.DS_Store
