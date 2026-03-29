@@ -20,3 +20,9 @@ $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
+// Je transforme le résultat SQL en tableau associatif
+$data = $result->fetch_all(MYSQLI_ASSOC);
+
+// J'encode le tout en JSON pour l'API
+echo json_encode($data);
+?>
