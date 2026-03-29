@@ -1,36 +1,33 @@
 <?php
 session_start();
-// Sécurité : on vérifie que l'utilisateur est bien connecté avant d'ajouter
+require_once 'db.php';
+
+// Je vérifie d'abord que l'utilisateur est bien connecté
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
 
-include 'db.php';
-
-// On vérifie que les champs nécessaires sont présents et non vides
-if (isset($_POST['montant'], $_POST['categorie'], $_POST['description']) && 
-    !empty($_POST['montant']) && !empty($_POST['categorie']) && !empty($_POST['description'])) {
-
+if (isset($_POST['montant'], $_POST['categorie'], $_POST['description'])) {
     $montant = $_POST['montant'];
     $categorie = $_POST['categorie'];
     $description = $_POST['description'];
-
-    // Note : on ne passe plus la date ici, la BDD mettra la date/heure actuelle
-    $stmt = $conn->prepare("INSERT INTO depenses (montant, categorie, description) VALUES (?, ?, ?)");
     
-    // "dss" signifie : double (nombre décimal), string, string
-    $stmt->bind_param("dss", $montant, $categorie, $description);
+    // J'identifie l'auteur de la dépense via sa session
+    $user_id = $_SESSION['user_id']; 
+
+    // J'insère les données en utilisant les noms de colonnes normalisés (minuscules)
+    $stmt = $conn->prepare("INSERT INTO depenses (montant, categorie, description, user_id) VALUES (?, ?, ?, ?)");
+    
+    // "dssi" : double pour montant, string pour catégorie/description, int pour user_id
+    $stmt->bind_param("dssi", $montant, $categorie, $description, $user_id);
     
     if ($stmt->execute()) {
-        // Succès : on peut ajouter un message en session si on veut (optionnel)
-        $_SESSION['message'] = "Dépense ajoutée avec succès !";
+        $_SESSION['message'] = "Dépense enregistrée avec succès !";
     }
-    
     $stmt->close();
 }
 
-// Redirection vers l'accueil pour voir le résultat
 header("Location: index.php");
 exit();
 ?>
