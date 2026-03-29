@@ -27,3 +27,34 @@ $users_res = $conn->query("SELECT u.id, u.login, u.role, COUNT(d.id) as nb_depen
             Dépenses totales sur la plateforme : <strong><?= number_format($total_global, 2) ?> €</strong>
         </div>
 
+        <h3>Liste des comptes utilisateurs</h3>
+        <table class="table mt-3">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Login</th>
+                    <th>Rôle</th>
+                    <th>Dépenses enregistrées</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while($u = $users_res->fetch_assoc()): ?>
+                <tr>
+                    <td><?= $u['id'] ?></td>
+                    <td><?= htmlspecialchars($u['login']) ?></td>
+                    <td><span class="badge bg-info"><?= $u['role'] ?></span></td>
+                    <td><?= $u['nb_depenses'] ?></td>
+                    <td>
+                        <?php if($u['id'] != $_SESSION['user_id']): ?>
+                            <a href="delete_user.php?id=<?= $u['id'] ?>" class="btn btn-danger btn-sm">Bannir</a>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
+        <a href="index.php" class="btn btn-secondary">Retour à l'application</a>
+    </div>
+</body>
+</html>
