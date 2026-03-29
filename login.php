@@ -4,7 +4,7 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
-require_once 'db.php'; // On utilise require_once pour être sûr que db.php est là
+require_once 'db.php'; // jai utilise require_once pour être sûr que db.php est là
 
 echo "";
 
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <form method="POST">
             <input type="text" name="login" class="form-control mb-2" placeholder="Login" required>
             <input type="password" name="password" class="form-control mb-2" placeholder="Pass" required>
-            <button type="submit" class="btn btn-primary w-100">Tester</button>
+            <button type="submit" class="btn btn-primary w-100">Se connecter</button>
         </form>
         <?php if(isset($error)) echo "<div class='alert alert-danger mt-2'>$error</div>"; ?>
     </div>
