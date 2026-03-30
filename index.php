@@ -6,24 +6,51 @@ if (!isset($_SESSION['user_id'])) {
 }
 include 'db.php';
 
-/** 1. RÉCUPÉRATION DES DONNÉES POUR LE TABLEAU **/
-$result = $conn->query("SELECT * FROM depenses ORDER BY date_depense DESC");
+$user_id = $_SESSION['user_id'];
+$user_role = $_SESSION['role'];
 
-/** 2. CALCUL DU TOTAL GÉNÉRAL **/
-$total_query = $conn->query("SELECT SUM(Montant) as total FROM depenses");
-$total_general = $total_query->fetch_assoc()['total'] ?? 0;
+/** 1. RÉCUPÉRATION DES DONNÉES SELON LE RÔLE **/
+if ($user_role === 'admin') {
+    // JOINTURE pour voir le nom de l'utilisateur sur chaque dépense
+    $query = "SELECT d.*, u.login as proprietaire 
+              FROM depenses d 
+              JOIN utilisateurs u ON d.user_id = u.id 
+              ORDER BY d.date_depense DESC";
+    $result = $conn->query($query);
+    
+    $total_query = $conn->query("SELECT SUM(montant) as total FROM depenses");
+    $total_general = $total_query->fetch_assoc()['total'] ?? 0;
 
-/** 3. RÉCUPÉRATION DES STATS POUR LA LISTE ET LE GRAPHIQUE **/
-$sql_stats = "SELECT categorie, SUM(Montant) as somme FROM depenses GROUP BY categorie";
-$stats_result = $conn->query($sql_stats);
+    $sql_stats = "SELECT categorie, SUM(montant) as somme FROM depenses GROUP BY categorie";
+    $stats_result = $conn->query($sql_stats);
 
+    // Liste des utilisateurs pour le panneau d'administration
+    $users_list = $conn->query("SELECT id, login, role FROM utilisateurs ORDER BY id ASC");
+} else {
+    // Mode utilisateur classique (Filtré)
+    $stmt = $conn->prepare("SELECT * FROM depenses WHERE user_id = ? ORDER BY date_depense DESC");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $total_stmt = $conn->prepare("SELECT SUM(montant) as total FROM depenses WHERE user_id = ?");
+    $total_stmt->bind_param("i", $user_id);
+    $total_stmt->execute();
+    $total_general = $total_stmt->get_result()->fetch_assoc()['total'] ?? 0;
+
+    $stats_stmt = $conn->prepare("SELECT categorie, SUM(montant) as somme FROM depenses WHERE user_id = ? GROUP BY categorie");
+    $stats_stmt->bind_param("i", $user_id);
+    $stats_stmt->execute();
+    $stats_result = $stats_stmt->get_result();
+}
+
+/** 2. PRÉPARATION DES STATS POUR LE GRAPHIQUE **/
 $categories = [];
 $montants = [];
 $stats_rows = [];
-
 while($row = $stats_result->fetch_assoc()) {
     $categories[] = $row['categorie']; 
-$montants[] = $row['somme'];
+    $montants[] = $row['somme'];
     $stats_rows[] = $row; 
 }
 ?>
@@ -31,19 +58,20 @@ $montants[] = $row['somme'];
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Mon Budget - SpendWise</title>
+    <title>GeeWise - <?= ($user_role === 'admin') ? 'Administration' : 'Mon Budget' ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="style.css"> 
 </head>
-<body>
+<body class="bg-light">
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow">
     <div class="container">
         <a class="navbar-brand fw-bold" href="index.php"><i class="bi bi-wallet2 me-2"></i>GeeWise</a>
         <div class="navbar-nav ms-auto text-white align-items-center">
-            <span class="me-3 small"><i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($_SESSION['user_login']) ?></span>
-            <a href="logout.php" class="btn btn-sm btn-outline-danger">Déconnexion</a>
+            <span class="badge bg-<?= ($user_role === 'admin') ? 'danger' : 'primary' ?> me-3">
+                <i class="bi bi-person-circle me-1"></i><?= htmlspecialchars($_SESSION['user_login']) ?> (<?= $user_role ?>)
+            </span>
+            <a href="logout.php" class="btn btn-sm btn-outline-light">Déconnexion</a>
         </div>
     </div>
 </nav>
@@ -51,13 +79,12 @@ $montants[] = $row['somme'];
 <div class="container">
     <div class="row">
         <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">Ajouter une dépense</div>
+            <?php if ($user_role !== 'admin'): ?>
+            <div class="card shadow-sm mb-4 border-primary">
+                <div class="card-header bg-primary text-white fw-bold">Ajouter une dépense</div>
                 <div class="card-body">
                     <form action="ajouter.php" method="POST">
-                        <div class="mb-2">
-                            <input type="number" step="0.01" name="montant" class="form-control" placeholder="Montant (€)" required>
-                        </div>
+                        <div class="mb-2"><input type="number" step="0.01" name="montant" class="form-control" placeholder="Montant (€)" required></div>
                         <div class="mb-2">
                             <select name="categorie" class="form-select" required>
                                 <option value="Alimentation">Alimentation</option>
@@ -66,62 +93,91 @@ $montants[] = $row['somme'];
                                 <option value="Santé">Santé</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <input type="text" name="description" class="form-control" placeholder="Description" required>
-                        </div>
-                        <button type="submit" class="btn btn-add-expense text-white w-100">Ajouter la dépense</button>
+                        <div class="mb-3"><input type="text" name="description" class="form-control" placeholder="Description" required></div>
+                        <button type="submit" class="btn btn-primary w-100">Ajouter</button>
                     </form>
                 </div>
             </div>
+            <?php endif; ?>
 
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">Répartition des frais</div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <canvas id="myChart"></canvas>
-                    </div>
-                    <ul class="list-group list-group-flush">
-                        <?php foreach($stats_rows as $s): ?>
-                        <li class="list-group-item d-flex justify-content-between align-items-center small">
-                            <?= htmlspecialchars($s['categorie']) ?> <span class="badge bg-light text-dark border"><?= number_format($s['somme'], 2) ?> €</span>
-                        </li>
-                        <?php endforeach; ?>
-                        <li class="list-group-item text-center fw-bold text-success fs-5 pt-3">
-                            Total : <?= number_format($total_general, 2) ?> €
-                        </li>
-                    </ul>
+            <div class="card shadow-sm mb-4 border-success">
+                <div class="card-header bg-success text-white fw-bold">Répartition <?= ($user_role === 'admin') ? 'Globale' : 'Personnelle' ?></div>
+                <div class="card-body text-center">
+                    <canvas id="myChart" style="max-height: 250px;"></canvas>
+                    <h4 class="mt-3 text-success fw-bold">Total : <?= number_format($total_general, 2, ',', ' ') ?> €</h4>
                 </div>
             </div>
         </div>
 
         <div class="col-md-8">
-            <div class="card shadow-sm overflow-hidden">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold border-0 pt-3">📋 Historique des dépenses</div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-muted small">
+                            <tr>
+                                <th class="ps-3">DATE</th>
+                                <?php if ($user_role === 'admin'): ?><th>UTILISATEUR</th><?php endif; ?>
+                                <th>DESCRIPTION</th>
+                                <th class="text-end">MONTANT</th>
+                                <th class="text-center">ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php while($row = $result->fetch_assoc()): ?>
+                            <tr>
+                                <td class="ps-3 small"><?= date('d/m/Y', strtotime($row['date_depense'])) ?></td>
+                                <?php if ($user_role === 'admin'): ?>
+                                    <td class="fw-bold text-primary small text-uppercase"><?= htmlspecialchars($row['proprietaire']) ?></td>
+                                <?php endif; ?>
+                                <td>
+                                    <strong><?= htmlspecialchars($row['description']) ?></strong><br>
+                                    <span class="badge bg-light text-secondary border small" style="font-size: 0.7rem;"><?= htmlspecialchars($row['categorie']) ?></span>
+                                </td>
+                                <td class="text-end fw-bold"><?= number_format($row['montant'], 2, ',', ' ') ?> €</td>
+                                <td class="text-center">
+                                    <a href="modifier.php?id=<?= $row['id'] ?>" class="btn btn-link text-warning p-1"><i class="bi bi-pencil-square"></i></a>
+                                    <a href="supprimer.php?id=<?= $row['id'] ?>" class="btn btn-link text-danger p-1" onclick="return confirm('Supprimer ?')"><i class="bi bi-trash"></i></a>
+                                </td>
+                            </tr>
+                            <?php endwhile; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <?php if ($user_role === 'admin'): ?>
+            <div class="card shadow-sm border-danger mt-4 mb-5">
+                <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">🛡️ Gestion des Utilisateurs</h5>
+                    <a href="inscription.php" class="btn btn-sm btn-light">Créer un compte</a>
+                </div>
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light small">
                         <tr>
-                            <th class="ps-3">Date</th>
-                            <th>Description</th>
-                            <th class="text-end">Montant</th>
-                            <th class="text-center">Actions</th>
+                            <th class="ps-3">ID</th>
+                            <th>LOGIN</th>
+                            <th>RÔLE</th>
+                            <th class="text-center">ACTION</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php while($row = $result->fetch_assoc()): ?>
-                        <tr class="align-middle">
-                            <td class="ps-3 small text-muted"><?= date('d/m/Y', strtotime($row['date_depense'])) ?></td>
-                            <td>
-                                <strong><?= htmlspecialchars($row['Description']) ?></strong>
-                                <span class="badge bg-secondary-subtle text-secondary small"><?= htmlspecialchars($row['categorie']) ?></span> </td>
-                            <td class="text-end fw-bold"><?= number_format($row['Montant'], 2) ?> €</td>
+                        <?php while($u = $users_list->fetch_assoc()): ?>
+                        <tr>
+                            <td class="ps-3">#<?= $u['id'] ?></td>
+                            <td class="fw-bold"><?= htmlspecialchars($u['login']) ?></td>
+                            <td><span class="badge <?= ($u['role'] === 'admin') ? 'bg-danger' : 'bg-secondary' ?>"><?= $u['role'] ?></span></td>
                             <td class="text-center">
-                                <a href="modifier.php?id=<?= $row['id'] ?>" class="btn btn-link text-warning p-1"><i class="bi bi-pencil-square"></i></a>
-                                <a href="supprimer.php?id=<?= $row['id'] ?>" class="btn btn-link text-danger p-1" onclick="return confirm('Supprimer cette dépense ?')"><i class="bi bi-trash"></i></a>
+                                <?php if($u['login'] !== $_SESSION['user_login']): ?>
+                                    <a href="supprimer_user.php?id=<?= $u['id'] ?>" class="btn btn-outline-danger btn-sm" onclick="return confirm('Supprimer cet utilisateur ?')">Bannir</a>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endwhile; ?>
                     </tbody>
                 </table>
             </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -136,14 +192,10 @@ $montants[] = $row['somme'];
             datasets: [{
                 data: <?= json_encode($montants) ?>,
                 backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6610f2', '#fd7e14'],
-                hoverOffset: 4
+                borderWidth: 0
             }]
         },
-        options: {
-            plugins: {
-                legend: { position: 'bottom' }
-            }
-        }
+        options: { plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
     });
 </script>
 </body>
