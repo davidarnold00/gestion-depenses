@@ -2,6 +2,7 @@
 :root {
     --primary-color: #0d6efd;
     --bg-light: #f8f9fa;
+    --admin-danger: #dc3545;
 }
 
 body {
@@ -9,7 +10,7 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Style de la page de connexion */
+/* Style de la page de connexion & Inscription */
 .login-container {
     max-width: 400px;
     margin-top: 100px;
@@ -26,12 +27,32 @@ body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-/* Style des cartes de statistiques et formulaires */
+/* --- Header Profil (view_user.php) --- */
+.user-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    color: white;
+    padding: 40px 0;
+    margin-bottom: 30px;
+    border-radius: 0 0 25px 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Style des cartes */
 .card {
     border-radius: 12px;
     border: none;
     margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
+
+/* --- NOUVEAU : Stats Card (view_user.php) --- */
+.stats-card {
+    background: white;
+    padding: 25px;
+    text-center: center;
+    transition: transform 0.3s ease;
+}
+.stats-card:hover { transform: translateY(-5px); }
 
 .card-header {
     border-radius: 12px 12px 0 0 !important;
@@ -41,11 +62,12 @@ body {
     letter-spacing: 1px;
 }
 
-/* Tableau des dépenses */
-.table {
+/* Tableaux */
+.table-container {
     background: white;
     border-radius: 12px;
     overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
 .table thead {
@@ -53,35 +75,17 @@ body {
     color: white;
 }
 
-.amount-badge {
-    font-weight: 700;
-    color: #198754;
+/* --- NOUVEAU : Badges catégories --- */
+.badge-cat { 
+    font-size: 0.75rem; 
+    padding: 5px 12px; 
+    border-radius: 20px; 
 }
 
-.btn-action {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
+/* Liens Admin */
+.text-primary.text-decoration-none:hover {
+    text-decoration: underline !important;
+    color: #052c65 !important;
 }
 
-/* Style pour le conteneur du graphique */
-.chart-container {
-    background-color: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    margin-top: 20px;
-}
 
-/* Style personnalisé pour le bouton d'ajout */
-.btn-add-expense {
-    background-color: #007bff;
-    border: none;
-    font-weight: bold;
-    padding: 10px;
-    transition: transform 0.2s;
-}
-
-.btn-add-expense:hover {
-    background-color: #0056b3;
-    transform: scale(1.02);
-}

@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $login_saisi = $_POST['login'];
     $password_saisi = $_POST['password'];
 
-    // CORRECTION ICI : J'ajoute 'login' dans mon SELECT pour ne plus avoir l'erreur Undefined key
+    // J'ajoute 'login' dans mon SELECT pour ne plus avoir l'erreur Undefined key
     $stmt = $conn->prepare("SELECT id, login, password, role FROM utilisateurs WHERE login = ?");
     $stmt->bind_param("s", $login_saisi);
     $stmt->execute();
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body class="bg-light d-flex align-items-center vh-100">
     <div class="container border p-4 bg-white shadow-sm rounded" style="max-width: 400px;">
-        <h2 class="text-center mb-4">💰 SpendWise</h2>
+        <h2 class="text-center mb-4">SpendWise</h2>
         <form method="POST">
             <div class="mb-3">
                 <label class="form-label">Nom d'utilisateur</label>
@@ -53,10 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <input type="password" name="password" class="form-control" required>
             </div>
             <button type="submit" class="btn btn-primary w-100">Se connecter</button>
-            
+
             <div class="text-center mt-3">
             <small>Pas encore de compte ? <a href="inscription.php">Créer un compte</a></small>
-</div>
+            </div>
         </form>
         
         <?php if(isset($error)): ?>

@@ -128,7 +128,11 @@ while($row = $stats_result->fetch_assoc()) {
                             <tr>
                                 <td class="ps-3 small"><?= date('d/m/Y', strtotime($row['date_depense'])) ?></td>
                                 <?php if ($user_role === 'admin'): ?>
-                                    <td class="fw-bold text-primary small text-uppercase"><?= htmlspecialchars($row['proprietaire']) ?></td>
+                                    <td class="small text-uppercase">
+                                     <a href="view_user.php?id=<?= $row['user_id'] ?>" class="fw-bold text-primary text-decoration-none">
+                                     <i class="bi bi-search me-1"></i><?= htmlspecialchars($row['proprietaire']) ?>
+                                      </a>
+                                    </td>                
                                 <?php endif; ?>
                                 <td>
                                     <strong><?= htmlspecialchars($row['description']) ?></strong><br>
@@ -169,8 +173,7 @@ while($row = $stats_result->fetch_assoc()) {
                             <td><span class="badge <?= ($u['role'] === 'admin') ? 'bg-danger' : 'bg-secondary' ?>"><?= $u['role'] ?></span></td>
                             <td class="text-center">
                                 <?php if($u['login'] !== $_SESSION['user_login']): ?>
-                                    <a href="supprimer_user.php?id=<?= $u['id'] ?>" class="btn btn-outline-danger btn-sm" onclick="return confirm('Supprimer cet utilisateur ?')">Bannir</a>
-                                <?php endif; ?>
+                                <button class="btn btn-outline-danger btn-sm" onclick="supprimerUser(<?= $u['id'] ?>, this)"> <i class="bi bi-trash"></i> Bannir cet utilisateur</button>                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endwhile; ?>
@@ -197,6 +200,33 @@ while($row = $stats_result->fetch_assoc()) {
         },
         options: { plugins: { legend: { position: 'bottom' } }, cutout: '70%' }
     });
+</script>
+
+<script>
+function supprimerUser(userId, bouton) {
+    if (confirm("Voulez-vous vraiment supprimer cet utilisateur ?")) {
+        
+        // On appelle ton fichier PHP (L'API)
+        fetch('supprimer_user.php?id=' + userId)
+        .then(response => {
+            if (response.ok) {
+                // Si la base de données a répondu OK
+                // On trouve la ligne (<tr>) et on la fait disparaître visuellement
+                const ligne = bouton.closest('tr');
+                ligne.style.transition = "all 0.6";
+                ligne.style.opacity = "0";
+                ligne.style.transform = "translateX(20px)";
+                
+                setTimeout(() => {
+                    ligne.remove(); // On retire la ligne du HTML après l'animation
+                }, 500);
+            } else {
+                alert("Erreur lors de la suppression.");
+            }
+        })
+        .catch(error => console.error('Erreur API:', error));
+    }
+}
 </script>
 </body>
 </html>
