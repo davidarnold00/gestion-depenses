@@ -27,6 +27,72 @@ body {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
+/* --- Style Spécifique pour la Page de Connexion --- */
+.page-login {
+    background-image: url('bg_login.jpg');
+    
+    /* 2. L'image couvre tout l'écran, sans se répéter */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed; /* L'image ne défile pas */
+    
+    /* 3. Ajout d'un Overlay pour que le formulaire reste lisible */
+    position: relative;
+    z-index: 1;
+}
+
+/* Création du voile sombre via un pseudo-élément */
+.page-login::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Noir à 50% de transparence */
+    z-index: -1; /* Place le voile DERRIÈRE le formulaire */
+}
+.logo-gee {
+    color: #0dfd95; /* Le bleu de ton thème */
+    font-weight: 500; /* Très gras pour que ça ressorte */
+}
+
+/* --- LE LOADER --- */
+.loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); /* Fond sombre pour faire ressortir le logo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* Toujours au-dessus de tout */
+}
+
+.loader-content {
+    text-align: center;
+}
+
+.loader-text {
+    color: white;
+    margin-top: 15px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: bold;
+}
+
+/* --- L'ANIMATION FLICKER --- */
+.animate-flicker {
+    animation: flickerEffect 1.5s infinite alternate;
+    font-size: 4rem; /* Taille imposante pour le splash screen */
+    color: white;
+}
+
+@keyframes flickerEffect {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; color: #0dfd95; }
+}
+
 /* --- Header Profil (view_user.php) --- */
 .user-header {
     background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
